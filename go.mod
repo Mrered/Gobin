@@ -1,4 +1,4 @@
-module ollama_plist
+module ollamaplist
 
 go 1.22.4
 

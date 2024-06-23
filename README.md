@@ -2,10 +2,10 @@
 
 Go 二进制小程序
 
-## ollama_plist
+## ollamaplist
 
 ```sh
-用法: ollama_plist [选项]
+用法: ollamaplist [选项]
 给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量
 
 选项:

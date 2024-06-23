@@ -2,13 +2,12 @@ version: 2
 project_name: Gobin
 
 builds:
-  - id: ollama_plist
-    dir: ./cmd/ollama_plist
-    binary: ollama_plist
+  - id: ollamaplist
+    dir: ./cmd/ollamaplist
+    binary: ollamaplist
     goos:
       - linux
       - darwin
-      - windows
     goarch:
       - amd64
       - arm64
