@@ -1,0 +1,28 @@
+version: 2
+project_name: Gobin
+
+builds:
+  - id: ollama_plist
+    dir: ./cmd/ollama_plist
+    binary: ollama_plist
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+release:
+  github:
+    owner: Mrered
+    name: Gobin
