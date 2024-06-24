@@ -1,4 +1,4 @@
-name: release
+name: 🚀 发布
 
 on:
   workflow_dispatch:

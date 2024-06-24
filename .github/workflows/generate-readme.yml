@@ -1,0 +1,35 @@
+name: 📝 生成自述文件
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  generate-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 检出代码
+        uses: actions/checkout@v2
+
+      - name: 🐹 安装 Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.22'
+
+      - name: 📝 生成自述文件
+        run: go run generate_readme.go
+
+      - name: ✅ 提交修改
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add README.md
+          git commit -m 'Update README.md'
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
