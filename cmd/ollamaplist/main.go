@@ -1,3 +1,21 @@
+/*
+ollamaplist
+给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量
+用法: ollamaplist [选项]
+
+选项:
+  -h    显示帮助信息
+  -m string
+        OLLAMA_MAX_LOADED_MODELS (default "2")
+  -o string
+        OLLAMA_ORIGINS (default "*")
+  -p string
+        OLLAMA_NUM_PARALLEL (default "4")
+  -r    删除所有环境变量
+  -s string
+        OLLAMA_HOST (default "0.0.0.0")
+*/
+
 package main
 
 import (
@@ -22,8 +40,8 @@ func main() {
 	flag.Parse()
 
 	if *help {
-		fmt.Println("用法: ollamaplist [选项]")
 		fmt.Println("给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量")
+		fmt.Println("用法: ollamaplist [选项]")
 		fmt.Println()
 		fmt.Println("选项:")
 		flag.PrintDefaults()
