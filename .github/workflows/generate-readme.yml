@@ -10,6 +10,9 @@ on:
 
 jobs:
   generate-readme:
+    permissions:
+      contents: write
+
     runs-on: ubuntu-latest
 
     steps:
@@ -25,11 +28,7 @@ jobs:
         run: go run generate_readme.go
 
       - name: ✅ 提交修改
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add README.md
-          git commit -m 'Update README.md'
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          file_pattern: README.md
+          commit_message: 自动更新自述文件
