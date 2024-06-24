@@ -1,5 +1,6 @@
 /*
 ollamaplist
+darwin
 给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量
 用法: ollamaplist [选项]
 

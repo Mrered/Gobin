@@ -12,6 +12,7 @@ import (
 func main() {
 	binDir := "cmd"
 	readmeFile := "README.md"
+	goreleaserFile := ".goreleaser.yml"
 
 	// 项目名称和描述
 	projectName := "Gobin"
@@ -20,18 +21,22 @@ func main() {
 	// 收集帮助信息
 	helpTexts := make(map[string]string)
 	descriptions := make(map[string]string)
+	goosInfo := make(map[string][]string)
+	var binaries []string
 	err := filepath.Walk(binDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() && path != binDir {
 			binaryName := filepath.Base(path)
-			_, projectDescription, helpText, err := getHelpTextFromMainGo(filepath.Join(path, "main.go"))
+			binaries = append(binaries, binaryName)
+			_, projectDescription, osInfo, helpText, err := getHelpTextFromMainGo(filepath.Join(path, "main.go"))
 			if err != nil {
 				return fmt.Errorf("读取 %s 失败: %v", binaryName, err)
 			}
 			helpTexts[binaryName] = helpText
 			descriptions[binaryName] = projectDescription
+			goosInfo[binaryName] = osInfo
 		}
 		return nil
 	})
@@ -46,6 +51,7 @@ func main() {
 	readmeContent.WriteString(fmt.Sprintf("# %s\n\n", projectName))
 	readmeContent.WriteString(fmt.Sprintf("%s\n\n", projectDescription))
 
+	readmeContent.WriteString("![Homebrew](https://img.shields.io/badge/-Homebrew-FBB040?labelColor=555555&logoColor=FFFFFF&logo=homebrew) ![CI](https://github.com/Mrered/Gobin/actions/workflows/CI.yml/badge.svg) ![license](https://img.shields.io/github/license/Mrered/Gobin) ![code-size](https://img.shields.io/github/languages/code-size/Mrered/Gobin) ![repo-size](https://img.shields.io/github/repo-size/Mrered/Gobin)\n\n")
 	readmeContent.WriteString("## 🍺 安装\n\n")
 	readmeContent.WriteString("```sh\n")
 	readmeContent.WriteString("brew tap brewforge/chinese\n")
@@ -94,18 +100,62 @@ func main() {
 	}
 
 	fmt.Println("README.md 文件已生成")
+
+	// 生成 .goreleaser.yml 内容
+	var goreleaserContent strings.Builder
+
+	goreleaserContent.WriteString("version: 2\n")
+	goreleaserContent.WriteString(fmt.Sprintf("project_name: %s\n\n", projectName))
+
+	goreleaserContent.WriteString("builds:\n")
+	for _, binary := range binaries {
+		goreleaserContent.WriteString(fmt.Sprintf("  - id: %s\n", binary))
+		goreleaserContent.WriteString(fmt.Sprintf("    dir: ./cmd/%s\n", binary))
+		goreleaserContent.WriteString(fmt.Sprintf("    binary: %s\n", binary))
+		goreleaserContent.WriteString("    goos:\n")
+		for _, os := range goosInfo[binary] {
+			goreleaserContent.WriteString(fmt.Sprintf("      - %s\n", os))
+		}
+		goreleaserContent.WriteString("    goarch:\n")
+		goreleaserContent.WriteString("      - amd64\n")
+		goreleaserContent.WriteString("      - arm64\n")
+		goreleaserContent.WriteString("    env:\n")
+		goreleaserContent.WriteString("      - CGO_ENABLED=0\n\n")
+	}
+
+	goreleaserContent.WriteString("archives:\n")
+	goreleaserContent.WriteString("  - format: tar.gz\n")
+	goreleaserContent.WriteString("    name_template: \"{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}\"\n")
+	goreleaserContent.WriteString("    files:\n")
+	goreleaserContent.WriteString("      - LICENSE\n")
+	goreleaserContent.WriteString("      - README.md\n\n")
+
+	goreleaserContent.WriteString("release:\n")
+	goreleaserContent.WriteString("  github:\n")
+	goreleaserContent.WriteString("    owner: Mrered\n")
+	goreleaserContent.WriteString("    name: Gobin\n")
+
+	// 写入 .goreleaser.yml 文件
+	err = os.WriteFile(goreleaserFile, []byte(goreleaserContent.String()), 0644)
+	if err != nil {
+		fmt.Println("写入 .goreleaser.yml 文件失败:", err)
+		return
+	}
+
+	fmt.Println(".goreleaser.yml 文件已生成")
 }
 
 // getHelpTextFromMainGo 读取 main.go 文件顶部注释内容
-func getHelpTextFromMainGo(filePath string) (string, string, string, error) {
+func getHelpTextFromMainGo(filePath string) (string, string, []string, string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", "", "", err
+		return "", "", nil, "", err
 	}
 	defer file.Close()
 
 	var helpText bytes.Buffer
 	var projectDescription string
+	var osInfo []string
 	scanner := bufio.NewScanner(file)
 	inBlockComment := false
 	lineNumber := 0
@@ -128,16 +178,19 @@ func getHelpTextFromMainGo(filePath string) (string, string, string, error) {
 				continue
 			}
 			if lineNumber == 1 {
+				osInfo = strings.Fields(trimmedLine)
+			} else if lineNumber == 2 {
 				projectDescription = strings.TrimSpace(line)
+			} else {
+				helpText.WriteString(line + "\n")
 			}
-			helpText.WriteString(line + "\n")
 			lineNumber++
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return "", "", "", err
+		return "", "", nil, "", err
 	}
 
-	return "", projectDescription, helpText.String(), nil
+	return "", projectDescription, osInfo, helpText.String(), nil
 }
