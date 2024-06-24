@@ -87,7 +87,7 @@ func main() {
 	readmeContent.WriteString("```\n\n")
 
 	readmeContent.WriteString("## 🏆 致谢\n\n")
-	readmeContent.WriteString("[Homebrew](https://brew.sh) [ChatGPT](https://chatgpt.com)\n\n")
+	readmeContent.WriteString("[Homebrew](https://brew.sh) [ChatGPT](https://chatgpt.com) [Claude](https://claude.ai)\n\n")
 
 	readmeContent.WriteString("## 📄 许可\n\n")
 	readmeContent.WriteString("[MIT](https://github.com/Mrered/Gobin/blob/main/LICENSE) © [Mrered](https://github.com/Mrered)\n")
