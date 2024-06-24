@@ -40,6 +40,7 @@ brew install <二进制命令行工具名> --formula
 用法: ollamaplist [选项]
 
 选项:
+  -a    应用默认配置
   -h    显示帮助信息
   -m string
         OLLAMA_MAX_LOADED_MODELS (default "2")
