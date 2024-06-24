@@ -102,14 +102,6 @@ func main() {
 	fmt.Println(" brew services start ollama")
 }
 
-func printHelp() {
-	fmt.Println("给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量")
-	fmt.Println("用法: ollamaplist [选项]")
-	fmt.Println()
-	fmt.Println("选项:")
-	flag.PrintDefaults()
-}
-
 func readPlistFile(path string) (PlistDict, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -137,4 +129,12 @@ func writePlistFile(path string, data PlistDict) error {
 	encoder := plist.NewEncoder(outputFile)
 	encoder.Indent("\t")
 	return encoder.Encode(data)
+}
+
+func printHelp() {
+	fmt.Println("给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量")
+	fmt.Println("用法: ollamaplist [选项]")
+	fmt.Println()
+	fmt.Println("选项:")
+	flag.PrintDefaults()
 }
