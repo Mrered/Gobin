@@ -2,6 +2,8 @@
 
 Go 二进制小程序
 
+![Homebrew](https://img.shields.io/badge/-Homebrew-FBB040?labelColor=555555&logoColor=FFFFFF&logo=homebrew) ![CI](https://github.com/Mrered/Gobin/actions/workflows/CI.yml/badge.svg) ![license](https://img.shields.io/github/license/Mrered/Gobin) ![code-size](https://img.shields.io/github/languages/code-size/Mrered/Gobin) ![repo-size](https://img.shields.io/github/repo-size/Mrered/Gobin)
+
 ## 🍺 安装
 
 ```sh
@@ -13,15 +15,14 @@ brew install <二进制命令行工具名> --formula
 
 |                     二进制命令行工具名                     |                        说明                        |
 | :--------------------------------------------------------: | :------------------------------------------------: |
-| [ollamaplist](https://github.com/Mrered/Gobin#ollamaplist) | 给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量 |
 | [makemf](https://github.com/Mrered/Gobin#makemf) | 为 GGUF 文件生成 Makefile |
+| [ollamaplist](https://github.com/Mrered/Gobin#ollamaplist) | 给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量 |
 
 ## 🚀 使用
 
 ### makemf
 
 ```sh
-为 GGUF 文件生成 Makefile
 用法: makemf [选项]
 
 选项:
@@ -36,7 +37,6 @@ brew install <二进制命令行工具名> --formula
 ### ollamaplist
 
 ```sh
-给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量
 用法: ollamaplist [选项]
 
 选项:
