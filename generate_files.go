@@ -49,6 +49,7 @@ func main() {
 	readmeContent.WriteString(fmt.Sprintf("# %s\n\n", projectName))
 	readmeContent.WriteString(fmt.Sprintf("%s\n\n", projectDescription))
 
+	readmeContent.WriteString("![Homebrew](https://img.shields.io/badge/-Homebrew-FBB040?labelColor=555555&logoColor=FFFFFF&logo=homebrew) ![CI](https://github.com/Mrered/Gobin/actions/workflows/CI.yml/badge.svg) ![license](https://img.shields.io/github/license/Mrered/Gobin) ![code-size](https://img.shields.io/github/languages/code-size/Mrered/Gobin) ![repo-size](https://img.shields.io/github/repo-size/Mrered/Gobin)\n\n")
 	readmeContent.WriteString("## 🍺 安装\n\n")
 	readmeContent.WriteString("```sh\n")
 	readmeContent.WriteString("brew tap brewforge/chinese\n")

@@ -1,16 +1,17 @@
-name: 📝 生成自述文件
+name: CI
 
 on:
   workflow_dispatch:
+  pull_request:
   push:
     tags:
       - '*'
 
-jobs:
-  generate-files:
-    permissions:
-      contents: write
+permissions:
+  contents: write
 
+jobs:
+  CI:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,6 +25,14 @@ jobs:
 
       - name: 📝 生成自述文件
         run: go run generate_files.go
+
+      - name: 🚀 发布
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: ✅ 提交修改
         uses: stefanzweifel/git-auto-commit-action@v4
