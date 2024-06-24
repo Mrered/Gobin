@@ -21,6 +21,7 @@ func main() {
 	// 收集帮助信息
 	helpTexts := make(map[string]string)
 	descriptions := make(map[string]string)
+	goosInfo := make(map[string][]string)
 	var binaries []string
 	err := filepath.Walk(binDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -29,12 +30,13 @@ func main() {
 		if info.IsDir() && path != binDir {
 			binaryName := filepath.Base(path)
 			binaries = append(binaries, binaryName)
-			_, projectDescription, helpText, err := getHelpTextFromMainGo(filepath.Join(path, "main.go"))
+			_, projectDescription, osInfo, helpText, err := getHelpTextFromMainGo(filepath.Join(path, "main.go"))
 			if err != nil {
 				return fmt.Errorf("读取 %s 失败: %v", binaryName, err)
 			}
 			helpTexts[binaryName] = helpText
 			descriptions[binaryName] = projectDescription
+			goosInfo[binaryName] = osInfo
 		}
 		return nil
 	})
@@ -111,8 +113,9 @@ func main() {
 		goreleaserContent.WriteString(fmt.Sprintf("    dir: ./cmd/%s\n", binary))
 		goreleaserContent.WriteString(fmt.Sprintf("    binary: %s\n", binary))
 		goreleaserContent.WriteString("    goos:\n")
-		goreleaserContent.WriteString("      - linux\n")
-		goreleaserContent.WriteString("      - darwin\n")
+		for _, os := range goosInfo[binary] {
+			goreleaserContent.WriteString(fmt.Sprintf("      - %s\n", os))
+		}
 		goreleaserContent.WriteString("    goarch:\n")
 		goreleaserContent.WriteString("      - amd64\n")
 		goreleaserContent.WriteString("      - arm64\n")
@@ -143,15 +146,16 @@ func main() {
 }
 
 // getHelpTextFromMainGo 读取 main.go 文件顶部注释内容
-func getHelpTextFromMainGo(filePath string) (string, string, string, error) {
+func getHelpTextFromMainGo(filePath string) (string, string, []string, string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", "", "", err
+		return "", "", nil, "", err
 	}
 	defer file.Close()
 
 	var helpText bytes.Buffer
 	var projectDescription string
+	var osInfo []string
 	scanner := bufio.NewScanner(file)
 	inBlockComment := false
 	lineNumber := 0
@@ -174,16 +178,19 @@ func getHelpTextFromMainGo(filePath string) (string, string, string, error) {
 				continue
 			}
 			if lineNumber == 1 {
+				osInfo = strings.Fields(trimmedLine)
+			} else if lineNumber == 2 {
 				projectDescription = strings.TrimSpace(line)
+			} else {
+				helpText.WriteString(line + "\n")
 			}
-			helpText.WriteString(line + "\n")
 			lineNumber++
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return "", "", "", err
+		return "", "", nil, "", err
 	}
 
-	return "", projectDescription, helpText.String(), nil
+	return "", projectDescription, osInfo, helpText.String(), nil
 }

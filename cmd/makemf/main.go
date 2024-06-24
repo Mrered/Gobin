@@ -1,5 +1,6 @@
 /*
 makemf
+linux darwin windows
 为 GGUF 文件生成 Makefile
 用法: makemf [选项]
 
