@@ -2,9 +2,9 @@ version: 2
 project_name: Gobin
 
 builds:
-  - id: ollamaplist
-    dir: ./cmd/ollamaplist
-    binary: ollamaplist
+  - id: makemf
+    dir: ./cmd/makemf
+    binary: makemf
     goos:
       - linux
       - darwin
@@ -14,9 +14,9 @@ builds:
     env:
       - CGO_ENABLED=0
 
-  - id: anothercli
-    dir: ./cmd/anothercli
-    binary: anothercli
+  - id: ollamaplist
+    dir: ./cmd/ollamaplist
+    binary: ollamaplist
     goos:
       - linux
       - darwin
