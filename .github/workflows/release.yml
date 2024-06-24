@@ -2,10 +2,10 @@ name: 🚀 发布
 
 on:
   workflow_dispatch:
-  pull_request:
-  push:
-    tags:
-      - '*'
+  workflow_run:
+    workflows: ["📝 生成自述文件"]
+    types:
+      - completed
 
 permissions:
   contents: write

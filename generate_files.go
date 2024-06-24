@@ -12,6 +12,7 @@ import (
 func main() {
 	binDir := "cmd"
 	readmeFile := "README.md"
+	goreleaserFile := ".goreleaser.yml"
 
 	// 项目名称和描述
 	projectName := "Gobin"
@@ -20,12 +21,14 @@ func main() {
 	// 收集帮助信息
 	helpTexts := make(map[string]string)
 	descriptions := make(map[string]string)
+	var binaries []string
 	err := filepath.Walk(binDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() && path != binDir {
 			binaryName := filepath.Base(path)
+			binaries = append(binaries, binaryName)
 			_, projectDescription, helpText, err := getHelpTextFromMainGo(filepath.Join(path, "main.go"))
 			if err != nil {
 				return fmt.Errorf("读取 %s 失败: %v", binaryName, err)
@@ -94,6 +97,48 @@ func main() {
 	}
 
 	fmt.Println("README.md 文件已生成")
+
+	// 生成 .goreleaser.yml 内容
+	var goreleaserContent strings.Builder
+
+	goreleaserContent.WriteString("version: 2\n")
+	goreleaserContent.WriteString(fmt.Sprintf("project_name: %s\n\n", projectName))
+
+	goreleaserContent.WriteString("builds:\n")
+	for _, binary := range binaries {
+		goreleaserContent.WriteString(fmt.Sprintf("  - id: %s\n", binary))
+		goreleaserContent.WriteString(fmt.Sprintf("    dir: ./cmd/%s\n", binary))
+		goreleaserContent.WriteString(fmt.Sprintf("    binary: %s\n", binary))
+		goreleaserContent.WriteString("    goos:\n")
+		goreleaserContent.WriteString("      - linux\n")
+		goreleaserContent.WriteString("      - darwin\n")
+		goreleaserContent.WriteString("    goarch:\n")
+		goreleaserContent.WriteString("      - amd64\n")
+		goreleaserContent.WriteString("      - arm64\n")
+		goreleaserContent.WriteString("    env:\n")
+		goreleaserContent.WriteString("      - CGO_ENABLED=0\n\n")
+	}
+
+	goreleaserContent.WriteString("archives:\n")
+	goreleaserContent.WriteString("  - format: tar.gz\n")
+	goreleaserContent.WriteString("    name_template: \"{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}\"\n")
+	goreleaserContent.WriteString("    files:\n")
+	goreleaserContent.WriteString("      - LICENSE\n")
+	goreleaserContent.WriteString("      - README.md\n\n")
+
+	goreleaserContent.WriteString("release:\n")
+	goreleaserContent.WriteString("  github:\n")
+	goreleaserContent.WriteString("    owner: Mrered\n")
+	goreleaserContent.WriteString("    name: Gobin\n")
+
+	// 写入 .goreleaser.yml 文件
+	err = os.WriteFile(goreleaserFile, []byte(goreleaserContent.String()), 0644)
+	if err != nil {
+		fmt.Println("写入 .goreleaser.yml 文件失败:", err)
+		return
+	}
+
+	fmt.Println(".goreleaser.yml 文件已生成")
 }
 
 // getHelpTextFromMainGo 读取 main.go 文件顶部注释内容
