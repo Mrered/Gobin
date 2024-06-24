@@ -31,9 +31,10 @@ jobs:
           git config user.email github-actions@github.com
           git add .
           git commit -m "自动生成文件 [skip ci]"
-          git push origin :${{ github.ref }}
-          git push --force
-          git push --tags
+          git push origin :${{ github.ref_name }}
+          git push origin HEAD:main
+          git tag -f ${{ github.ref_name }}
+          git push origin ${{ github.ref_name }} --force
 
       - name: 🚀 发布
         uses: goreleaser/goreleaser-action@v6
