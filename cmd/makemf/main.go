@@ -28,16 +28,15 @@ import (
 // printResult 打印生成结果
 func printResult(outputFile string) {
 	name := strings.TrimSuffix(outputFile, ".mf")
-
 	fmt.Printf("已生成：%s\n", outputFile)
 	fmt.Println("")
 	fmt.Println("生成模型文件：")
 	fmt.Println("")
-	fmt.Printf("  ollama create %s -f ./%s\n", name, outputFile)
+	fmt.Printf(" ollama create %s -f ./%s\n", name, outputFile)
 	fmt.Println("")
 	fmt.Println("运行大模型：")
 	fmt.Println("")
-	fmt.Printf("  ollama run %s\n", name)
+	fmt.Printf(" ollama run %s\n", name)
 	fmt.Println("")
 }
 
@@ -80,18 +79,14 @@ func handleManualMode(name, modelFile string, ggufFiles []string) {
 		log.Fatalf("写入文件失败: %v", err)
 	}
 	printResult(name + ".mf")
-
 	fmt.Println("当前目录下的 .gguf 文件：")
 	for i, file := range ggufFiles {
 		fmt.Printf("%d. %s\n", i+1, file)
 	}
 	fmt.Println("请输入文件序号（多个序号用空格隔开，或使用 1-3 表示连续序号）：")
-
 	var userInput string
 	fmt.Scanln(&userInput)
-
 	selectedFiles := parseUserInput(userInput, ggufFiles)
-
 	for _, file := range selectedFiles {
 		outputFile := strings.TrimSuffix(file, ".gguf") + ".mf"
 		if err := generateMakefile(strings.TrimSuffix(file, ".gguf"), file); err != nil {
@@ -130,6 +125,15 @@ func parseIndex(input string) int {
 	return index
 }
 
+// printHelp 打印帮助信息
+func printHelp() {
+	fmt.Println("为 GGUF 文件生成 Makefile")
+	fmt.Println("用法: makemf [选项]")
+	fmt.Println()
+	fmt.Println("选项:")
+	flag.PrintDefaults()
+}
+
 func main() {
 	// 定义命令行参数
 	name := flag.String("n", "", "要生成的 Makefile 名称")
@@ -137,23 +141,10 @@ func main() {
 	autoMode := flag.Bool("a", false, "自动为当前目录下的所有 .gguf 文件生成 Makefile")
 	help := flag.Bool("h", false, "显示帮助信息")
 
-	flag.Usage = func() {
-		fmt.Println("为 GGUF 文件生成 Makefile")
-		fmt.Println("用法: makemf [选项]")
-		fmt.Println()
-		fmt.Println("选项:")
-		flag.PrintDefaults()
-	}
-
 	flag.Parse()
 
-	if *help {
-		flag.Usage()
-		return
-	}
-
-	if len(os.Args) == 1 {
-		flag.Usage()
+	if len(os.Args) == 1 || *help {
+		printHelp()
 		return
 	}
 
