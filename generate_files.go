@@ -124,11 +124,15 @@ func main() {
 	}
 
 	goreleaserContent.WriteString("archives:\n")
-	goreleaserContent.WriteString("  - format: tar.gz\n")
-	goreleaserContent.WriteString("    name_template: \"{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}\"\n")
-	goreleaserContent.WriteString("    files:\n")
-	goreleaserContent.WriteString("      - LICENSE\n")
-	goreleaserContent.WriteString("      - README.md\n\n")
+	for _, binary := range binaries {
+		goreleaserContent.WriteString(fmt.Sprintf("  - id: %s\n", binary))
+		goreleaserContent.WriteString(fmt.Sprintf("    builds: [%s]\n", binary))
+		goreleaserContent.WriteString("    format: tar.gz\n")
+		goreleaserContent.WriteString("    name_template: \"{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}\"\n")
+		goreleaserContent.WriteString("    files:\n")
+		goreleaserContent.WriteString("      - LICENSE\n")
+		goreleaserContent.WriteString("      - README.md\n\n")
+	}
 
 	goreleaserContent.WriteString("release:\n")
 	goreleaserContent.WriteString("  github:\n")
