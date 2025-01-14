@@ -24,6 +24,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"howett.net/plist"
 )
@@ -99,7 +100,11 @@ func main() {
 	}
 
 	fmt.Println("Ollama CLI 环境变量已成功更新到 plist 文件，通过以下命令启动服务：")
-	fmt.Println(" brew services start ollama")
+	fmt.Println("\n  brew services start ollama")
+
+	// 显示更新后的环境变量值
+	fmt.Println()
+	displayEnvVars(getEnvVars(plistData))
 }
 
 func readPlistFile(path string) (PlistDict, error) {
@@ -137,4 +142,37 @@ func printHelp() {
 	fmt.Println()
 	fmt.Println("选项:")
 	flag.PrintDefaults()
+}
+
+func displayEnvVars(envVars PlistDict) {
+	if envVars == nil {
+		fmt.Println("未找到 EnvironmentVariables 字典。")
+		return
+	}
+
+	// 计算最长键的长度，用于对齐冒号
+	maxKeyLength := 0
+	keys := []string{"OLLAMA_HOST", "OLLAMA_ORIGINS", "OLLAMA_MAX_LOADED_MODELS", "OLLAMA_NUM_PARALLEL"}
+	for _, key := range keys {
+		if len(key) > maxKeyLength {
+			maxKeyLength = len(key)
+		}
+	}
+
+	// 格式化输出
+	for _, key := range keys {
+		value, ok := envVars[key]
+		if !ok {
+			value = "未设置" // 如果键不存在，则显示“未设置”
+		}
+		padding := strings.Repeat(" ", maxKeyLength-len(key))
+		fmt.Printf("%s:%s %v\n", key, padding, value)
+	}
+}
+
+func getEnvVars(plistData PlistDict) PlistDict {
+	if envVars, ok := plistData["EnvironmentVariables"].(PlistDict); ok {
+		return envVars
+	}
+	return nil
 }
