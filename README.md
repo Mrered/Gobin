@@ -32,6 +32,7 @@ brew install <二进制命令行工具名> --formula
         GGUF 文件名称，包含后缀名
   -n string
         要生成的 Makefile 名称
+  -v    显示版本号
 ```
 
 ### ollamaplist
@@ -51,6 +52,7 @@ brew install <二进制命令行工具名> --formula
   -r    删除所有环境变量
   -s string
         OLLAMA_HOST (default "0.0.0.0")
+  -v    显示版本号
 ```
 
 ## ⚙️ 构建
