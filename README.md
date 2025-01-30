@@ -20,21 +20,6 @@ brew install <二进制命令行工具名> --formula
 
 ## 🚀 使用
 
-### makemf
-
-```sh
-用法: makemf [选项]
-
-选项:
-  -a    自动为当前目录下的所有 .gguf 文件生成 Makefile
-  -h    显示帮助信息
-  -m string
-        GGUF 文件名称，包含后缀名
-  -n string
-        要生成的 Makefile 名称
-  -v    显示版本号
-```
-
 ### ollamaplist
 
 ```sh
@@ -52,6 +37,21 @@ brew install <二进制命令行工具名> --formula
   -r    删除所有环境变量
   -s string
         OLLAMA_HOST (default "0.0.0.0")
+  -v    显示版本号
+```
+
+### makemf
+
+```sh
+用法: makemf [选项]
+
+选项:
+  -a    自动为当前目录下的所有 .gguf 文件生成 Makefile
+  -h    显示帮助信息
+  -m string
+        GGUF 文件名称，包含后缀名
+  -n string
+        要生成的 Makefile 名称
   -v    显示版本号
 ```
 
@@ -73,7 +73,7 @@ make help
 
 ## 🏆 致谢
 
-[Homebrew](https://brew.sh) [ChatGPT](https://chatgpt.com)
+[Homebrew](https://brew.sh) [ChatGPT](https://chatgpt.com) [Claude](https://claude.ai)
 
 ## 📄 许可
 
