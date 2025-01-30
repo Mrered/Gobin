@@ -15,12 +15,18 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: 📦 检出代码
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: 🏷️ 获取最新 tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
       - name: 🐹 安装 Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'  # 指定 Go 版本，保持一致
 
       - name: 📝 生成自述文件
         run: go run generate_files.go

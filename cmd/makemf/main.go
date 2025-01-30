@@ -11,6 +11,7 @@ linux darwin windows
         GGUF 文件名称，包含后缀名
   -n string
         要生成的 Makefile 名称
+  -v    显示版本号
 */
 
 package main
@@ -25,14 +26,23 @@ import (
 	"strings"
 )
 
+// 版本号，默认值 "dev"，在编译时通过 -ldflags 动态设置
+var version = "dev"
+
 func main() {
 	// 定义命令行标志
 	name := flag.String("n", "", "要生成的 Makefile 名称")
 	modelFile := flag.String("m", "", "GGUF 文件名称，包含后缀名")
 	autoMode := flag.Bool("a", false, "自动为当前目录下的所有 .gguf 文件生成 Makefile")
 	help := flag.Bool("h", false, "显示帮助信息")
+	versionFlag := flag.Bool("v", false, "显示版本号")
 
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("makemf 版本: %s\n", version)
+		return
+	}
 
 	if len(os.Args) == 1 || *help {
 		printHelp()

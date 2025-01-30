@@ -16,6 +16,7 @@ darwin
   -r    删除所有环境变量
   -s string
         OLLAMA_HOST (default "0.0.0.0")
+  -v    显示版本号
 */
 
 package main
@@ -29,10 +30,13 @@ import (
 	"howett.net/plist"
 )
 
+// 版本号，默认值 "dev"，在编译时通过 -ldflags 动态设置
+var version = "dev"
+
 type PlistDict map[string]interface{}
 
 func main() {
-	// 定义命令行标志
+	// 定义命令行参数
 	host := flag.String("s", "0.0.0.0", "OLLAMA_HOST")
 	origins := flag.String("o", "*", "OLLAMA_ORIGINS")
 	maxLoadedModels := flag.String("m", "2", "OLLAMA_MAX_LOADED_MODELS")
@@ -40,22 +44,30 @@ func main() {
 	removeEnv := flag.Bool("r", false, "删除所有环境变量")
 	help := flag.Bool("h", false, "显示帮助信息")
 	applyDefault := flag.Bool("a", false, "应用默认配置")
+	showVersion := flag.Bool("v", false, "显示版本号")
 
 	flag.Parse()
 
+	// 显示版本号
+	if *showVersion {
+		fmt.Println("ollamaplist 版本:", version)
+		return
+	}
+
+	// 显示帮助信息
 	if len(os.Args) == 1 || *help {
 		printHelp()
 		return
 	}
 
-	// 确定 plist 文件路径
+	// plist 文件路径
 	plistPath := "/opt/homebrew/opt/ollama/homebrew.mxcl.ollama.plist"
 	outputPath := plistPath
 
-	// 检查 plist 文件是否存在
+	// 检查 plist 是否存在
 	if _, err := os.Stat(plistPath); os.IsNotExist(err) {
-		fmt.Println("你没有通过 Homebrew 安装 Ollama CLI ，运行下面的命令来安装：")
-		fmt.Println(" brew install ollama --formula")
+		fmt.Println("你没有通过 Homebrew 安装 Ollama CLI，运行以下命令来安装：")
+		fmt.Println("  brew install ollama --formula")
 		return
 	}
 
