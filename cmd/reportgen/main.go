@@ -7,18 +7,19 @@ linux darwin windows
 选项:
   -d string
         指定工作目录
+  -f    是否格式化内容
   -h    显示帮助信息
-  -t string
-        指定报告类型 (w: 周报, m: 月报, s: 学期报, y: 年报)
-  -w string
-        指定周数
   -m string
         指定月份 (格式: YYYYMM)
   -s string
         指定学期 (格式: YYYY - YYYY 春/秋)
+  -t string
+        指定报告类型 (w: 周报, m: 月报, s: 学期报, y: 年报)
+  -v    显示版本号
+  -w string
+        指定周数
   -y string
         指定年份 (格式: YYYY)
-  -v    显示版本号
 */
 
 package main

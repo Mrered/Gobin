@@ -19,4 +19,4 @@ require (
 	golang.org/x/text v0.4.0 // indirect
 )
 
-replace github.com/mrered/gobin/pkg/reportgen => ./pkg/reportgen
+// replace github.com/mrered/gobin/pkg/reportgen => ./pkg/reportgen

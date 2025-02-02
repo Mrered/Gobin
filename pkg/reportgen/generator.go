@@ -123,7 +123,9 @@ func (g *BaseGenerator) mergeSectionsAndFormat(reports []Report) string {
 
 	// 初始化格式化器
 	formatters := map[string]SectionFormatter{
-		TeachingSection: &TeachingFormatter{},
+		TeachingSection:      &TeachingFormatter{},
+		ListeningSection:     &ListeningFormatter{},
+		MiscellaneousSection: &MiscellaneousFormatter{},
 	}
 
 	for _, section := range sectionOrder {
@@ -139,9 +141,8 @@ func (g *BaseGenerator) mergeSectionsAndFormat(reports []Report) string {
 			// 对每个部分分别处理"无"的内容
 			baseContent = ProcessEmptyContent(baseContent)
 
-			// 对教学部分进行高级格式化处理
-			if section == TeachingSection && g.Config.Formatting {
-				formatter := formatters[TeachingSection]
+			// 对特定部分进行高级格式化处理
+			if formatter, ok := formatters[section]; ok && g.Config.Formatting {
 				result.WriteString(formatter.Format(baseContent))
 			} else {
 				result.WriteString(baseContent)
