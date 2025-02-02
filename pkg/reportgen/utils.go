@@ -64,6 +64,45 @@ func GetSemesterPeriod(date time.Time) string {
 	return fmt.Sprintf("%d - %d 秋", year, year+1)
 }
 
+// ProcessEmptyContent 处理内容中的"无"，确保每个部分只保留一个"无"
+func ProcessEmptyContent(content string) string {
+	if strings.TrimSpace(content) == "" {
+		return ""
+	}
+
+	// 按行分割内容
+	lines := strings.Split(content, "\n")
+	var result []string
+
+	// 检查是否所有内容都是"无"
+	allNone := true
+	for _, line := range lines {
+		if strings.TrimSpace(line) != "无" && strings.TrimSpace(line) != "" {
+			allNone = false
+			break
+		}
+	}
+
+	// 如果全是"无"，只保留一个"无"
+	if allNone {
+		return "无"
+	}
+
+	// 处理每一行，跳过空行和单独的"无"
+	for _, line := range lines {
+		if line != "" && line != "无" {
+			result = append(result, line)
+		}
+	}
+
+	// 如果处理后没有内容，返回"无"
+	if len(result) == 0 {
+		return "无"
+	}
+
+	return strings.Join(result, "\n")
+}
+
 // FormatMarkdown 格式化 Markdown 内容
 func FormatMarkdown(content string) string {
 	// 移除空行
@@ -83,5 +122,5 @@ func FormatMarkdown(content string) string {
 		}
 	}
 
-	return strings.Join(result, "\n")
+	return ProcessEmptyContent(strings.Join(result, "\n"))
 }

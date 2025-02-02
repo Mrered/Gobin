@@ -128,30 +128,24 @@ func (g *BaseGenerator) mergeSectionsAndFormat(reports []Report) string {
 
 	for _, section := range sectionOrder {
 		if content, ok := mergedSections[section]; ok && len(content) > 0 {
+			// 在每个部分之前添加额外的换行符，确保与上一部分有空行间隔
+			if result.Len() > 0 {
+				result.WriteString("\n\n")
+			}
 			result.WriteString(fmt.Sprintf("## %s\n\n", section))
 
-			// 对教学部分进行基础格式化处理
-			if section == TeachingSection {
-				// 先进行基础格式化处理
-				baseContent := FormatMarkdown(strings.Join(content, "\n"))
+			// 先进行基础格式化处理
+			baseContent := FormatMarkdown(strings.Join(content, "\n"))
+			// 对每个部分分别处理"无"的内容
+			baseContent = ProcessEmptyContent(baseContent)
 
-				// 如果启用了高级格式化，则使用 TeachingFormatter 进行进一步处理
-				if g.Config.Formatting {
-					formatter := formatters[TeachingSection]
-					result.WriteString(formatter.Format(baseContent))
-				} else {
-					result.WriteString(baseContent)
-				}
+			// 对教学部分进行高级格式化处理
+			if section == TeachingSection && g.Config.Formatting {
+				formatter := formatters[TeachingSection]
+				result.WriteString(formatter.Format(baseContent))
 			} else {
-				// 其他部分根据配置决定是否进行格式化
-				if g.Config.Formatting {
-					formattedContent := FormatMarkdown(strings.Join(content, "\n"))
-					result.WriteString(formattedContent)
-				} else {
-					result.WriteString(strings.Join(content, "\n"))
-				}
+				result.WriteString(baseContent)
 			}
-			result.WriteString("\n\n")
 		}
 	}
 
