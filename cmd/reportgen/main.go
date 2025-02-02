@@ -44,6 +44,7 @@ func main() {
 	// 定义命令行参数
 	dirPath := flag.String("d", "", "指定工作目录")
 	reportType := flag.String("t", "", "指定报告类型 (w: 周报, m: 月报, s: 学期报, y: 年报)")
+	formatting := flag.Bool("f", false, "是否格式化内容")
 	week := flag.String("w", "", "指定周数")
 	month := flag.String("m", "", "指定月份 (格式: YYYYMM)")
 	semester := flag.String("s", "", "指定学期 (格式: YYYY - YYYY 春/秋)")
@@ -87,6 +88,7 @@ func main() {
 	// 创建配置
 	config := &reportgen.Config{
 		ReportType: *reportType,
+		Formatting: *formatting,
 	}
 
 	// 创建生成器

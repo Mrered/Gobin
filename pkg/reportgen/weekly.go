@@ -28,9 +28,8 @@ func (g *WeeklyGenerator) Generate(sourcePath string, params map[string]string) 
 		return fmt.Errorf("未找到第 %s 周的日报", g.Config.SelectedPeriod)
 	}
 
-	// 合并报告内容
-	sections := g.mergeSections(selectedReports)
-	content := g.formatReport(sections)
+	// 合并报告内容并格式化
+	content := g.mergeSectionsAndFormat(selectedReports)
 
 	// 生成输出文件名
 	firstFile := filepath.Base(selectedReports[0].FilePath)

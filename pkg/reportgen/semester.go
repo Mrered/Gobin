@@ -32,9 +32,8 @@ func (g *SemesterGenerator) Generate(sourcePath string, params map[string]string
 		return fmt.Errorf("未找到 %s 学期的月报", g.Config.SelectedPeriod)
 	}
 
-	// 合并报告内容
-	sections := g.mergeSections(selectedReports)
-	content := g.formatReport(sections)
+	// 合并报告内容并格式化
+	content := g.mergeSectionsAndFormat(selectedReports)
 
 	// 生成输出文件名
 	outputFile := filepath.Join(g.Config.TargetDir, fmt.Sprintf("%s.md", g.Config.SelectedPeriod))

@@ -112,16 +112,45 @@ func (g *BaseGenerator) mergeSections(reports []Report) map[string][]string {
 	return merged
 }
 
-// formatReport 格式化最终报告
-func (g *BaseGenerator) formatReport(sections map[string][]string) string {
+// mergeSectionsAndFormat 合并报告内容并格式化
+func (g *BaseGenerator) mergeSectionsAndFormat(reports []Report) string {
+	// 第一步：合并所有报告的内容
+	mergedSections := g.mergeSections(reports)
+
+	// 第二步：格式化合并后的内容
 	var result strings.Builder
 	sectionOrder := []string{TeachingSection, ListeningSection, TrainingSection, MiscellaneousSection}
 
+	// 初始化格式化器
+	formatters := map[string]SectionFormatter{
+		TeachingSection: &TeachingFormatter{},
+	}
+
 	for _, section := range sectionOrder {
-		if content, ok := sections[section]; ok && len(content) > 0 {
+		if content, ok := mergedSections[section]; ok && len(content) > 0 {
 			result.WriteString(fmt.Sprintf("## %s\n\n", section))
-			formattedContent := FormatMarkdown(strings.Join(content, "\n"))
-			result.WriteString(formattedContent)
+
+			// 对教学部分进行基础格式化处理
+			if section == TeachingSection {
+				// 先进行基础格式化处理
+				baseContent := FormatMarkdown(strings.Join(content, "\n"))
+
+				// 如果启用了高级格式化，则使用 TeachingFormatter 进行进一步处理
+				if g.Config.Formatting {
+					formatter := formatters[TeachingSection]
+					result.WriteString(formatter.Format(baseContent))
+				} else {
+					result.WriteString(baseContent)
+				}
+			} else {
+				// 其他部分根据配置决定是否进行格式化
+				if g.Config.Formatting {
+					formattedContent := FormatMarkdown(strings.Join(content, "\n"))
+					result.WriteString(formattedContent)
+				} else {
+					result.WriteString(strings.Join(content, "\n"))
+				}
+			}
 			result.WriteString("\n\n")
 		}
 	}

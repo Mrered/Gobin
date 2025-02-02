@@ -26,6 +26,7 @@ type Config struct {
 	TargetDir      string
 	ReportType     string
 	SelectedPeriod string
+	Formatting     bool
 }
 
 // Section 定义了报告中的各个部分
