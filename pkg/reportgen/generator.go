@@ -122,10 +122,23 @@ func (g *BaseGenerator) mergeSectionsAndFormat(reports []Report) string {
 	sectionOrder := []string{TeachingSection, ListeningSection, TrainingSection, MiscellaneousSection}
 
 	// 初始化格式化器
-	formatters := map[string]SectionFormatter{
-		TeachingSection:      &TeachingFormatter{},
-		ListeningSection:     &ListeningFormatter{},
-		MiscellaneousSection: &MiscellaneousFormatter{},
+	var formatters map[string]SectionFormatter
+	// 如果是周报，使用周报的格式化器
+	// 根据生成器类型初始化对应的格式化器
+	switch g.Config.ReportType {
+	case "w":
+		formatters = map[string]SectionFormatter{
+			TeachingSection:      &TeachingFormatter{},
+			ListeningSection:     &ListeningFormatter{},
+			MiscellaneousSection: &MiscellaneousFormatter{},
+		}
+	case "m", "s":
+		formatters = map[string]SectionFormatter{
+			TeachingSection:      &MonthlyTeachingFormatter{},
+			ListeningSection:     &MonthlyListeningFormatter{},
+			TrainingSection:      &MonthlyTrainingFormatter{},
+			MiscellaneousSection: &MonthlyMattersFormatter{},
+		}
 	}
 
 	for _, section := range sectionOrder {
