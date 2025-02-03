@@ -17,8 +17,24 @@ brew install <二进制命令行工具名> --formula
 | :--------------------------------------------------------: | :------------------------------------------------: |
 | [makemf](https://github.com/Mrered/Gobin#makemf) | 为 GGUF 文件生成 Makefile |
 | [ollamaplist](https://github.com/Mrered/Gobin#ollamaplist) | 给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量 |
+| [reportgen](https://github.com/Mrered/Gobin#reportgen) | 生成报告 |
 
 ## 🚀 使用
+
+### makemf
+
+```sh
+用法: makemf [选项]
+
+选项:
+  -a    自动为当前目录下的所有 .gguf 文件生成 Makefile
+  -h    显示帮助信息
+  -m string
+        GGUF 文件名称，包含后缀名
+  -n string
+        要生成的 Makefile 名称
+  -v    显示版本号
+```
 
 ### ollamaplist
 
@@ -40,19 +56,27 @@ brew install <二进制命令行工具名> --formula
   -v    显示版本号
 ```
 
-### makemf
+### reportgen
 
 ```sh
-用法: makemf [选项]
+用法: reportgen [选项]
 
 选项:
-  -a    自动为当前目录下的所有 .gguf 文件生成 Makefile
+  -d string
+        指定工作目录
+  -f    是否格式化内容
   -h    显示帮助信息
   -m string
-        GGUF 文件名称，包含后缀名
-  -n string
-        要生成的 Makefile 名称
+        指定月份 (格式: YYYYMM)
+  -s string
+        指定学期 (格式: YYYY - YYYY 春/秋)
+  -t string
+        指定报告类型 (w: 周报, m: 月报, s: 学期报, y: 年报)
   -v    显示版本号
+  -w string
+        指定周数
+  -y string
+        指定年份 (格式: YYYY)
 ```
 
 ## ⚙️ 构建
