@@ -60,3 +60,80 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-homebrew:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: 📦 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐹 安装 Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+
+      - name: 🍺 克隆 Homebrew 仓库
+        uses: actions/checkout@v4
+        with:
+          repository: brewforge/homebrew-chinese
+          path: homebrew-chinese
+          token: ${{ secrets.HOMEBREW_TOKEN }}
+
+      - name: 📝 生成配方数据
+        id: generate_data
+        run: |
+          go run .github/scripts/deliver_ruby_config.go > formula_data.json
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: 📥 下载源码包
+        run: |
+          curl -L -o source.tar.gz https://github.com/Mrered/Gobin/archive/refs/tags/$VERSION.tar.gz
+          echo "SHA256=$(sha256sum source.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
+
+      - name: 🔨 生成配方文件
+        run: |
+          while IFS= read -r project; do
+            name=$(echo $project | jq -r '.project')
+            desc=$(echo $project | jq -r '.description')
+            capitalized_name=$(echo ${name^})
+            cat > "homebrew-chinese/Formula/${name}.rb" << EOL
+          class ${capitalized_name} < Formula
+            desc "${desc}"
+            homepage "https://github.com/Mrered/Gobin"
+            url "https://github.com/Mrered/Gobin/archive/refs/tags/${VERSION}.tar.gz"
+            sha256 "${SHA256}"
+            license "MIT"
+            head "https://github.com/Mrered/Gobin.git", branch: "main"
+
+            depends_on "go" => :build
+
+            def install
+              system "go", "build", *std_go_args(ldflags: "-s -w"), "./cmd/${name}"
+            end
+
+            test do
+              system bin/"${name}", "-v"
+            end
+          end
+          EOL
+          done < <(jq -c '.[]' formula_data.json)
+
+      - name: 🔄 创建 Pull Request
+        run: |
+          cd homebrew-chinese
+          git config user.name github-actions
+          git config user.email "${{ secrets.COMMIT_EMAIL }}"
+          git add Formula/*.rb
+          git commit -m "Gobin ${VERSION}"
+          git push origin HEAD:gobin-${VERSION}
+          gh pr create \
+            --title "Gobin ${VERSION}" \
+            --body "更新 Gobin 配方到版本 ${VERSION}" \
+            --base main \
+            --head gobin-${VERSION}
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TOKEN }}
