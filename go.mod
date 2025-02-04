@@ -3,13 +3,12 @@ module github.com/mrered/gobin
 go 1.22.4
 
 require (
-	github.com/manifoldco/promptui v0.9.0
+	github.com/AlecAivazis/survey/v2 v2.3.7
 	howett.net/plist v1.0.1
 )
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
-	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
+	github.com/Mrered/Gobin/pkg/scripts v0.0.0-00010101000000-000000000000 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.8 // indirect
