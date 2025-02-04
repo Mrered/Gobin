@@ -81,6 +81,7 @@ jobs:
         with:
           repository: brewforge/homebrew-chinese
           path: homebrew-chinese
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📝 生成配方数据
         id: generate_data
