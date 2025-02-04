@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/Mrered/Gobin/pkg/scripts v0.0.0-00010101000000-000000000000 // indirect
+	// github.com/Mrered/Gobin/pkg/scripts v0.0.0-00010101000000-000000000000 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.8 // indirect
@@ -19,4 +19,4 @@ require (
 )
 
 // replace github.com/mrered/gobin/pkg/reportgen => ./pkg/reportgen
-replace github.com/Mrered/Gobin/pkg/scripts => ./pkg/scripts
+// replace github.com/Mrered/Gobin/pkg/scripts => ./pkg/scripts
