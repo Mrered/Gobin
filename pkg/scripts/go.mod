@@ -1,3 +1,3 @@
-module github.com/Mrered/Gobin/pkg/scripts
+module github.com/mrered/gobin/pkg/scripts
 
 go 1.22.4
