@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Mrered/Gobin/.github/scripts@test-CI"
+	"github.com/Mrered/Gobin/pkg/scripts@test-CI"
 )
 
 func main() {
