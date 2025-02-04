@@ -20,3 +20,4 @@ require (
 )
 
 // replace github.com/mrered/gobin/pkg/reportgen => ./pkg/reportgen
+replace github.com/Mrered/Gobin/pkg/scripts => ./pkg/scripts
