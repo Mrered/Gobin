@@ -17,9 +17,9 @@ brew install <二进制命令行工具名> --formula
 
 |                     二进制命令行工具名                     |                        说明                        |
 | :--------------------------------------------------------: | :------------------------------------------------: |
+| [reportgen](https://github.com/Mrered/Gobin#reportgen) | 生成报告 |
 | [makemf](https://github.com/Mrered/Gobin#makemf) | 为 GGUF 文件生成 Makefile |
 | [ollamaplist](https://github.com/Mrered/Gobin#ollamaplist) | 给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量 |
-| [reportgen](https://github.com/Mrered/Gobin#reportgen) | 生成报告 |
 
 ## 🚀 使用
 
@@ -103,11 +103,11 @@ make help
 
 具体功能：
 
-- 🌟🌟🌟🌟🌟 **对 Make 的支持**：
+- 🌟🌟🌟🌟🌟 **对 `Make` 的支持**：
 ```sh
-`make build`
+make build
 ```
-- 🌟🌟🌟 **对 GoReleaser 的支持**：
+- 🌟🌟🌟 **对 `GoReleaser` 的支持**：
 ```yaml
 - name: 🚀 发布
   uses: goreleaser/goreleaser-action@v6
@@ -118,12 +118,13 @@ make help
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 - 🌟🌟🌟🌟 **自动生成 `.goreleaser.yml` 和 `README.md`**：
-> 参考 [这个文件](https://github.com/Mrered/Gobin/blob/main/.github/scripts/generate_project_files.go) 和 [这个文件](https://github.com/Mrered/Gobin/blob/main/pkg/scripts/get_info.go) 
 
+    参考 [这个文件](https://github.com/Mrered/Gobin/blob/main/.github/scripts/generate_project_files.go) 和 [这个文件](https://github.com/Mrered/Gobin/blob/main/pkg/scripts/get_info.go) 
+
+    必要条件：必须在 Go 源码顶端添加如下格式的注释，参考 [这个文件](https://github.com/Mrered/Gobin/blob/main/cmd/reportgen/main.go)
 ```sh
 go run .github/scripts/generate_project_files.go
 ```
-必要条件：必须在 Go 源码顶端添加如下格式的注释，参考 [这个文件](https://github.com/Mrered/Gobin/blob/main/cmd/reportgen/main.go)
 ```go
 /*
 ${projectName}
@@ -134,8 +135,9 @@ ${projectDescription}
 ${helpText.String()}
 */
 ```
-- 🌟🌟🌟 **自动生成 Homebrew Formula Ruby 脚本**：
-首先使用 [这个文件](https://github.com/Mrered/Gobin/blob/main/.github/scripts/deliver_ruby_config.go) 获取所有命令行工具的信息，格式为 `JSON` ，接着使用 [这个片段](https://github.com/Mrered/Gobin/blob/c63d3021893ba3c12897da15a5f43d005fed43eb/.github/workflows/CI.yml#L97-L124) 中的代码生成 `${name}.rb` 文件
+- 🌟🌟🌟 **自动生成 `Homebrew Formula Ruby` 脚本**：
+
+    首先使用 [这个文件](https://github.com/Mrered/Gobin/blob/main/.github/scripts/deliver_ruby_config.go) 获取所有命令行工具的信息，格式为 `JSON` ，接着使用 [这个片段](https://github.com/Mrered/Gobin/blob/c63d3021893ba3c12897da15a5f43d005fed43eb/.github/workflows/CI.yml#L97-L124) 中的代码生成 `${name}.rb` 文件
 ```ruby
 class ${capitalized_name} < Formula
   desc "${desc}"
