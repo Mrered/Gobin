@@ -79,8 +79,8 @@ jobs:
       - name: 🍺 克隆 Homebrew 仓库
         uses: actions/checkout@v4
         with:
-          repository: brewforge/homebrew-chinese
-          path: homebrew-chinese
+          repository: brewforge/homebrew-more
+          path: homebrew-more
           token: ${{ secrets.BREWFORGE_PAT }}
 
       - name: 📝 生成配方数据
@@ -100,7 +100,7 @@ jobs:
             name=$(echo $project | jq -r '.project')
             desc=$(echo $project | jq -r '.description')
             capitalized_name=$(echo ${name^})
-            cat > "homebrew-chinese/Formula/${name}.rb" << EOL
+            cat > "homebrew-more/Formula/${name}.rb" << EOL
           class ${capitalized_name} < Formula
             desc "${desc}"
             homepage "https://github.com/Mrered/Gobin"
@@ -124,7 +124,7 @@ jobs:
 
       - name: 🔄 创建 Pull Request
         run: |
-          cd homebrew-chinese
+          cd homebrew-more
           git config user.name github-actions
           git config user.email "${{ secrets.COMMIT_EMAIL }}"
           git add Formula/*.rb
