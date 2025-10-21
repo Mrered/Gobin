@@ -20,6 +20,7 @@ brew install <二进制命令行工具名> --formula
 | [makemf](https://github.com/Mrered/Gobin#makemf) | 为 GGUF 文件生成 Makefile |
 | [ollamaplist](https://github.com/Mrered/Gobin#ollamaplist) | 给通过 Homebrew 安装的 Ollama CLI 工具添加环境变量 |
 | [reportgen](https://github.com/Mrered/Gobin#reportgen) | 生成报告 |
+| [shicaojiaoan](https://github.com/Mrered/Gobin#shicaojiaoan) | 实操教案格式化生成器 |
 
 ## 🚀 使用
 
@@ -79,6 +80,18 @@ brew install <二进制命令行工具名> --formula
         指定周数
   -y string
         指定年份 (格式: YYYY)
+```
+
+### shicaojiaoan
+
+```sh
+用法: shicaojiaoan [选项] [输入文件]
+
+选项:
+  -h    显示帮助信息
+  -p    生成 PDF 文件（需要安装 typst）
+  -t    生成空白模板文件 template.md
+  -v    显示详细输出信息
 ```
 
 ## ⚙️ 构建

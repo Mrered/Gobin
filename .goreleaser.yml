@@ -39,6 +39,19 @@ builds:
     env:
       - CGO_ENABLED=0
 
+  - id: shicaojiaoan
+    dir: ./cmd/shicaojiaoan
+    binary: shicaojiaoan
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
 archives:
   - id: makemf
     builds: [makemf]
@@ -58,6 +71,14 @@ archives:
 
   - id: reportgen
     builds: [reportgen]
+    format: tar.gz
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+  - id: shicaojiaoan
+    builds: [shicaojiaoan]
     format: tar.gz
     name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
