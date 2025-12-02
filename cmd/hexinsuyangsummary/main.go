@@ -8,6 +8,7 @@ linux darwin windows
   -h    显示帮助信息
   -p string
         输入目录路径
+  -a    全量输出（database-style 详细记录模式）
 */
 
 package main
@@ -30,11 +31,21 @@ type PersonData struct {
 	Dimensions map[string][]float64 // dimension name -> list of scores
 }
 
+// Record represents a single row in the database-style output
+type Record struct {
+	SourceFile string   // 源文件名
+	SheetName  string   // sheet 名称
+	CValue     string   // C 列的内容
+	EValue     float64  // E 列的数值
+}
+
 func main() {
+	// Command line flags
 	pathFlag := flag.String("p", "", "输入目录路径")
+	allFlag := flag.Bool("a", false, "全量输出（database-style 详细记录模式）")
 	helpFlag := flag.Bool("h", false, "显示帮助信息")
 
-	// Custom usage to avoid default flag output when calling Usage()
+	// Custom usage
 	flag.Usage = printHelp
 
 	flag.Parse()
@@ -51,17 +62,9 @@ func main() {
 	}
 
 	inputDir := *pathFlag
-	// Output file is always summary.xlsx in the input directory
-	outputFile := filepath.Join(inputDir, "summary.xlsx")
 
-	// Resolve output file absolute path to avoid processing it
-	absOutput, err := filepath.Abs(outputFile)
-	if err != nil {
-		log.Printf("Warning: Could not resolve absolute path for output file: %v", err)
-		absOutput = outputFile // Fallback
-	}
-
-	files, err := collectFiles(inputDir, absOutput)
+	// Collect files
+	files, err := collectFiles(inputDir)
 	if err != nil {
 		log.Fatalf("Error collecting files: %v", err)
 	}
@@ -73,18 +76,40 @@ func main() {
 
 	log.Printf("Found %d .xlsx files. Processing...", len(files))
 
-	// Map person name -> PersonData
-	data := make(map[string]*PersonData)
+	if *allFlag {
+		// Database-style detailed output
+		var records []Record
+		for _, file := range files {
+			fileRecords := processFileForDetail(file)
+			records = append(records, fileRecords...)
+		}
 
-	for _, file := range files {
-		processFile(file, data)
+		if len(records) > 0 {
+			outputFile := filepath.Join(inputDir, "detail.xlsx")
+			if err := writeDetail(outputFile, records); err != nil {
+				log.Fatalf("Error writing detail file: %v", err)
+			}
+			log.Printf("Detail records written to %s", outputFile)
+		} else {
+			log.Println("No valid records found.")
+		}
+	} else {
+		// Summary mode (average scores)
+		data := make(map[string]*PersonData)
+		for _, file := range files {
+			processFileForSummary(file, data)
+		}
+
+		if len(data) > 0 {
+			outputFile := filepath.Join(inputDir, "summary.xlsx")
+			if err := writeSummary(outputFile, data); err != nil {
+				log.Fatalf("Error writing summary file: %v", err)
+			}
+			log.Printf("Summary written to %s", outputFile)
+		} else {
+			log.Println("No valid data found.")
+		}
 	}
-
-	if err := writeSummary(outputFile, data); err != nil {
-		log.Fatalf("Error writing summary: %v", err)
-	}
-
-	log.Printf("Summary successfully written to %s", outputFile)
 }
 
 func printHelp() {
@@ -95,20 +120,14 @@ func printHelp() {
 	flag.PrintDefaults()
 }
 
-// collectFiles recursively finds all .xlsx files in the directory.
-func collectFiles(dir, absOutput string) ([]string, error) {
+// collectFiles finds all .xlsx files in the directory
+func collectFiles(dir string) ([]string, error) {
 	var files []string
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(strings.ToLower(info.Name()), ".xlsx") {
-			// Get absolute path of current file
-			absPath, err := filepath.Abs(path)
-			if err == nil && absPath == absOutput {
-				return nil // Skip output file
-			}
-
 			if !strings.HasPrefix(info.Name(), "~$") { // Ignore temp files
 				files = append(files, path)
 			}
@@ -118,7 +137,8 @@ func collectFiles(dir, absOutput string) ([]string, error) {
 	return files, err
 }
 
-func processFile(path string, data map[string]*PersonData) {
+// processFileForSummary processes a file for summary mode (averages)
+func processFileForSummary(path string, data map[string]*PersonData) {
 	f, err := excelize.OpenFile(path)
 	if err != nil {
 		log.Printf("Warning: Could not open file %s: %v", path, err)
@@ -126,49 +146,38 @@ func processFile(path string, data map[string]*PersonData) {
 	}
 	defer f.Close()
 
-	// Each sheet name is a person's name
 	for _, sheetName := range f.GetSheetMap() {
-		processSheet(f, sheetName, data)
+		processSheetForSummary(f, sheetName, data)
 	}
 }
 
-func processSheet(f *excelize.File, personName string, data map[string]*PersonData) {
+// processSheetForSummary processes a sheet for summary mode
+func processSheetForSummary(f *excelize.File, personName string, data map[string]*PersonData) {
 	rows, err := f.GetRows(personName)
 	if err != nil {
 		log.Printf("Warning: Could not get rows for sheet %s: %v", personName, err)
 		return
 	}
 
-	// Get merged cells to handle them correctly
 	mergedCells, err := f.GetMergeCells(personName)
 	if err != nil {
 		log.Printf("Warning: Could not get merged cells for sheet %s: %v", personName, err)
-		// Continue without merge info
 	}
 
-	// Initialize PersonData if not exists
 	if _, ok := data[personName]; !ok {
 		data[personName] = &PersonData{
 			Dimensions: make(map[string][]float64),
 		}
 	}
 
-	// Iterate rows. 1-based index for Excel, but rows slice is 0-based.
-	// row index i corresponds to Excel row i+1.
 	for i, row := range rows {
 		rowNum := i + 1
 
-		// Column C is index 2 (dimension name)
-		// Column E is index 4 (score)
-
-		// Check if this row is part of a merged cell for Col E and if it's the top-left cell.
-		// If it's part of a merged cell but NOT the top-left, we skip it (to avoid double counting).
 		eVal, isTopLeftE := getCellValue(f, personName, "E", rowNum, mergedCells, row)
 		if !isTopLeftE {
-			continue // Skip this row for E-column purposes (it's covered by a previous row's merge)
+			continue
 		}
 
-		// If E value is empty/invalid, we skip
 		eVal = strings.TrimSpace(eVal)
 		if eVal == "" {
 			continue
@@ -176,51 +185,104 @@ func processSheet(f *excelize.File, personName string, data map[string]*PersonDa
 
 		score, err := strconv.ParseFloat(eVal, 64)
 		if err != nil {
-			// Not a number, maybe header or garbage. Skip.
 			continue
 		}
 
-		// Get corresponding C value (dimension name)
 		dimension := getCellStringValue(f, personName, "C", rowNum, mergedCells, row)
 		dimension = strings.TrimSpace(dimension)
 		if dimension == "" {
-			continue // Skip if no dimension name
+			continue
 		}
 
-		// Filter out invalid dimension names (e.g., "姓名：XXX")
 		if strings.HasPrefix(dimension, "姓名：") || strings.HasPrefix(dimension, "姓名:") {
-			continue // Skip this, it's not a valid dimension
+			continue
 		}
 
-		// Store the score for this person's dimension
 		data[personName].Dimensions[dimension] = append(data[personName].Dimensions[dimension], score)
 	}
 }
 
-// getCellValue returns the value of the cell, and a boolean indicating if this cell should be processed.
-// It returns true if the cell is not merged OR if it is the top-left of a merged range.
-// It returns false if the cell is part of a merged range but NOT the top-left.
-// For the value: if it's a merged cell, it returns the value of the top-left cell.
+// processFileForDetail processes a file for detail mode
+func processFileForDetail(path string) []Record {
+	f, err := excelize.OpenFile(path)
+	if err != nil {
+		log.Printf("Warning: Could not open file %s: %v", path, err)
+		return nil
+	}
+	defer f.Close()
+
+	var records []Record
+	for _, sheetName := range f.GetSheetMap() {
+		sheetRecords := processSheetForDetail(f, path, sheetName)
+		records = append(records, sheetRecords...)
+	}
+	return records
+}
+
+// processSheetForDetail processes a sheet for detail mode
+func processSheetForDetail(f *excelize.File, filePath, sheetName string) []Record {
+	rows, err := f.GetRows(sheetName)
+	if err != nil {
+		log.Printf("Warning: Could not get rows for sheet %s: %v", sheetName, err)
+		return nil
+	}
+
+	mergedCells, err := f.GetMergeCells(sheetName)
+	if err != nil {
+		log.Printf("Warning: Could not get merged cells for sheet %s: %v", sheetName, err)
+	}
+
+	var records []Record
+	for i, row := range rows {
+		rowNum := i + 1
+
+		cVal := getCellStringValue(f, sheetName, "C", rowNum, mergedCells, row)
+		eVal, isTopLeftE := getCellValue(f, sheetName, "E", rowNum, mergedCells, row)
+
+		if !isTopLeftE {
+			continue
+		}
+
+		cVal = strings.TrimSpace(cVal)
+		eVal = strings.TrimSpace(eVal)
+
+		if cVal == "" || eVal == "" {
+			continue
+		}
+
+		eValue, err := strconv.ParseFloat(eVal, 64)
+		if err != nil {
+			continue
+		}
+
+		record := Record{
+			SourceFile: filepath.Base(filePath),
+			SheetName:  sheetName,
+			CValue:     cVal,
+			EValue:     eValue,
+		}
+		records = append(records, record)
+	}
+
+	return records
+}
+
+// getCellValue returns the value of the cell, and a boolean indicating if this cell should be processed
 func getCellValue(f *excelize.File, sheet, colName string, rowNum int, mergedCells []excelize.MergeCell, rowData []string) (string, bool) {
 	cellRef := fmt.Sprintf("%s%d", colName, rowNum)
 
 	for _, mc := range mergedCells {
 		inRange, err := isCellInRange(cellRef, mc.GetStartAxis(), mc.GetEndAxis())
 		if err == nil && inRange {
-			// It is in a merged range.
-			// Check if it is the top-left.
 			if cellRef == mc.GetStartAxis() {
-				// It is the top-left. Return value.
 				val, _ := f.GetCellValue(sheet, mc.GetStartAxis())
 				return val, true
 			} else {
-				// It is in a merged range but NOT top-left. Skip.
 				return "", false
 			}
 		}
 	}
 
-	// Not in any merged range. Return value from rowData if available.
 	colIdx := -1
 	switch colName {
 	case "C":
@@ -232,24 +294,21 @@ func getCellValue(f *excelize.File, sheet, colName string, rowNum int, mergedCel
 	if colIdx >= 0 && colIdx < len(rowData) {
 		return rowData[colIdx], true
 	}
-	return "", true // Empty, but "valid" in sense of not being skipped due to merge
+	return "", true
 }
 
-// getCellStringValue gets the value for a cell, handling merges (always returns the value of the merge block if inside one).
-// This is for Column C, where we just want the label associated with the current row (or the merge block start).
+// getCellStringValue gets the value for a cell, handling merges
 func getCellStringValue(f *excelize.File, sheet, colName string, rowNum int, mergedCells []excelize.MergeCell, rowData []string) string {
 	cellRef := fmt.Sprintf("%s%d", colName, rowNum)
 
 	for _, mc := range mergedCells {
 		inRange, err := isCellInRange(cellRef, mc.GetStartAxis(), mc.GetEndAxis())
 		if err == nil && inRange {
-			// It is in a merged range. Return the value of the top-left.
 			val, _ := f.GetCellValue(sheet, mc.GetStartAxis())
 			return val
 		}
 	}
 
-	// Not merged.
 	colIdx := -1
 	switch colName {
 	case "C":
@@ -264,8 +323,7 @@ func getCellStringValue(f *excelize.File, sheet, colName string, rowNum int, mer
 	return ""
 }
 
-// isCellInRange checks if cell is within start:end range.
-// Simplified check.
+// isCellInRange checks if cell is within start:end range
 func isCellInRange(cell, start, end string) (bool, error) {
 	col, row, err := excelize.CellNameToCoordinates(cell)
 	if err != nil {
@@ -285,22 +343,21 @@ func isCellInRange(cell, start, end string) (bool, error) {
 	return col >= c1 && col <= c2 && row >= r1 && row <= r2, nil
 }
 
+// writeSummary writes the summary output (averages)
 func writeSummary(outputPath string, data map[string]*PersonData) error {
 	f := excelize.NewFile()
 
-	// Create a new sheet or use default "Sheet1"
 	sheetName := "Summary"
 	index, err := f.NewSheet(sheetName)
 	if err != nil {
 		return err
 	}
 	f.SetActiveSheet(index)
-	// Delete default Sheet1 if we created a new one
 	if sheetName != "Sheet1" {
 		f.DeleteSheet("Sheet1")
 	}
 
-	// Collect all dimension names (union of all dimensions across all persons)
+	// Collect all dimension names
 	dimensionSet := make(map[string]bool)
 	for _, personData := range data {
 		for dimension := range personData.Dimensions {
@@ -308,60 +365,80 @@ func writeSummary(outputPath string, data map[string]*PersonData) error {
 		}
 	}
 
-	// Convert to sorted slice for consistent column order
 	dimensions := make([]string, 0, len(dimensionSet))
 	for dimension := range dimensionSet {
 		dimensions = append(dimensions, dimension)
 	}
-	// Sort dimensions alphabetically (optional, but makes output more predictable)
-	// You can customize the sort order if needed
 	sort.Strings(dimensions)
 
-	// Collect all person names
 	personNames := make([]string, 0, len(data))
 	for personName := range data {
 		personNames = append(personNames, personName)
 	}
-	// Sort person names alphabetically (optional)
 	sort.Strings(personNames)
 
-	// Write headers: 序号 | 姓名 | dimension1 | dimension2 | ...
+	// Write headers
 	f.SetCellValue(sheetName, "A1", "序号")
 	f.SetCellValue(sheetName, "B1", "姓名")
 	for i, dimension := range dimensions {
-		cell, _ := excelize.CoordinatesToCellName(i+3, 1) // Start from column C (index 3)
+		cell, _ := excelize.CoordinatesToCellName(i+3, 1)
 		f.SetCellValue(sheetName, cell, dimension)
 	}
 
-	// Write data rows
+	// Write data
 	for idx, personName := range personNames {
-		rowNum := idx + 2 // Start from row 2 (row 1 is header)
+		rowNum := idx + 2
 		personData := data[personName]
 
-		// Column A: 序号 (1-based index)
 		f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowNum), idx+1)
-
-		// Column B: 姓名
 		f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowNum), personName)
 
-		// Columns C onwards: dimension scores (average)
 		for i, dimension := range dimensions {
 			cell, _ := excelize.CoordinatesToCellName(i+3, rowNum)
-
 			if scores, ok := personData.Dimensions[dimension]; ok && len(scores) > 0 {
-				// Calculate average
 				sum := 0.0
 				for _, score := range scores {
 					sum += score
 				}
 				avg := sum / float64(len(scores))
-
-				// Round to 2 decimal places
 				avgRounded, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", avg), 64)
 				f.SetCellValue(sheetName, cell, avgRounded)
 			}
-			// If no scores for this dimension, leave cell empty
 		}
+	}
+
+	return f.SaveAs(outputPath)
+}
+
+// writeDetail writes the detail output (database-style)
+func writeDetail(outputPath string, records []Record) error {
+	f := excelize.NewFile()
+
+	sheetName := "Detail"
+	index, err := f.NewSheet(sheetName)
+	if err != nil {
+		return err
+	}
+	f.SetActiveSheet(index)
+	if sheetName != "Sheet1" {
+		f.DeleteSheet("Sheet1")
+	}
+
+	// Write headers
+	headers := []string{"SourceFile", "SheetName", "CValue", "EValue"}
+	for i, header := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheetName, cell, header)
+	}
+
+	// Write data
+	for idx, record := range records {
+		rowNum := idx + 2
+
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowNum), record.SourceFile)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowNum), record.SheetName)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowNum), record.CValue)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowNum), record.EValue)
 	}
 
 	return f.SaveAs(outputPath)
