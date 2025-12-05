@@ -8,6 +8,9 @@ linux darwin windows
   -h    显示帮助信息
   -p string
         输入目录路径
+  -c string
+        指定一个模板 Excel 文件 (用于读取 H3/H4/H5)
+  -m    开启修改模式 (将模板数据写入目标文件)
   -a    全量输出（database-style 详细记录模式）
 */
 
@@ -33,15 +36,27 @@ type PersonData struct {
 
 // Record represents a single row in the database-style output
 type Record struct {
-	SourceFile string   // 源文件名
-	SheetName  string   // sheet 名称
-	CValue     string   // C 列的内容
-	EValue     float64  // E 列的数值
+	SourceFile string  // 源文件名
+	SheetName  string  // sheet 名称
+	CValue     string  // C 列的内容
+	EValue     float64 // E 列的数值
+}
+
+// TemplateData stores the data to be filled in (H3, H4, H5) as integers and (J3, J4, J5) as strings
+type TemplateData struct {
+	H3 int
+	H4 int
+	H5 int
+	J3 string
+	J4 string
+	J5 string
 }
 
 func main() {
 	// Command line flags
 	pathFlag := flag.String("p", "", "输入目录路径")
+	templateFlag := flag.String("c", "", "指定一个模板 Excel 文件 (用于读取 H3/H4/H5)")
+	modifyFlag := flag.Bool("m", false, "开启修改模式 (将模板数据写入目标文件)")
 	allFlag := flag.Bool("a", false, "全量输出（database-style 详细记录模式）")
 	helpFlag := flag.Bool("h", false, "显示帮助信息")
 
@@ -61,6 +76,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Template Mode Logic
+	if *templateFlag != "" {
+		templateData, err := readTemplateData(*templateFlag)
+		if err != nil {
+			log.Fatalf("Error reading template: %v", err)
+		}
+
+		if *modifyFlag {
+			processFilesForModification(*pathFlag, *templateFlag, templateData)
+		} else {
+			fmt.Println("模板读取成功。请指定 -m 参数以执行批量修改。")
+			fmt.Printf("已读取 %d 个 sheet 的模板数据。\n", len(templateData))
+		}
+		return
+	}
+
+	// Original Summary/Detail Logic
 	inputDir := *pathFlag
 
 	// Collect files
@@ -442,4 +474,139 @@ func writeDetail(outputPath string, records []Record) error {
 	}
 
 	return f.SaveAs(outputPath)
+}
+
+// readTemplateData reads H3, H4, H5 from all sheets in the template file
+func readTemplateData(path string) (map[string]TemplateData, error) {
+	f, err := excelize.OpenFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not open template file: %w", err)
+	}
+	defer f.Close()
+
+	data := make(map[string]TemplateData)
+	for _, sheetName := range f.GetSheetMap() {
+		// Read cell values as strings
+		h3Str, _ := f.GetCellValue(sheetName, "H3")
+		h4Str, _ := f.GetCellValue(sheetName, "H4")
+		h5Str, _ := f.GetCellValue(sheetName, "H5")
+		j3Str, _ := f.GetCellValue(sheetName, "J3")
+		j4Str, _ := f.GetCellValue(sheetName, "J4")
+		j5Str, _ := f.GetCellValue(sheetName, "J5")
+
+		// Convert to integers, default to 0 on error
+		h3, err := strconv.Atoi(strings.TrimSpace(h3Str))
+		if err != nil {
+			log.Printf("Warning: could not parse H3 value '%s' in sheet %s: %v", h3Str, sheetName, err)
+			h3 = 0
+		}
+		h4, err := strconv.Atoi(strings.TrimSpace(h4Str))
+		if err != nil {
+			log.Printf("Warning: could not parse H4 value '%s' in sheet %s: %v", h4Str, sheetName, err)
+			h4 = 0
+		}
+		h5, err := strconv.Atoi(strings.TrimSpace(h5Str))
+		if err != nil {
+			log.Printf("Warning: could not parse H5 value '%s' in sheet %s: %v", h5Str, sheetName, err)
+			h5 = 0
+		}
+
+		data[sheetName] = TemplateData{
+			H3: h3,
+			H4: h4,
+			H5: h5,
+			J3: j3Str,
+			J4: j4Str,
+			J5: j5Str,
+		}
+	}
+	return data, nil
+}
+
+// processFilesForModification iterates through files and applies template data
+func processFilesForModification(dir, templatePath string, templateData map[string]TemplateData) {
+	files, err := collectFiles(dir)
+	if err != nil {
+		log.Fatalf("Error collecting files: %v", err)
+	}
+
+	absTemplatePath, _ := filepath.Abs(templatePath)
+
+	processedCount := 0
+	sheetCount := 0
+	missingSheets := make(map[string][]string) // filename -> list of missing sheets
+
+	for _, file := range files {
+		absFile, _ := filepath.Abs(file)
+		if absFile == absTemplatePath {
+			continue // Skip template file itself
+		}
+
+		log.Printf("Processing %s...", filepath.Base(file))
+		missing, count, err := processFileForModification(file, templateData)
+		if err != nil {
+			log.Printf("Error processing file %s: %v", file, err)
+			continue
+		}
+
+		processedCount++
+		sheetCount += count
+		if len(missing) > 0 {
+			missingSheets[filepath.Base(file)] = missing
+		}
+	}
+
+	fmt.Println("--------------------------------------------------")
+	fmt.Printf("共处理 %d 个文件 (excluding 模板文件)，%d 个 sheet。\n", processedCount, sheetCount)
+	if len(missingSheets) > 0 {
+		fmt.Println("下列文件 / sheet 未找到对应模板数据：")
+		for file, sheets := range missingSheets {
+			fmt.Printf("%s: missing sheet %s\n", file, strings.Join(sheets, ", "))
+		}
+	} else {
+		fmt.Println("所有文件的 sheet 均在模板中找到对应数据。")
+	}
+}
+
+// processFileForModification modifies a single file
+func processFileForModification(path string, templateData map[string]TemplateData) ([]string, int, error) {
+	f, err := excelize.OpenFile(path)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer f.Close()
+
+	var missing []string
+	sheetCount := 0
+	modified := false
+
+	for _, sheetName := range f.GetSheetMap() {
+		sheetCount++
+		if tmpl, ok := templateData[sheetName]; ok {
+			f.SetCellValue(sheetName, "H3", tmpl.H3)
+			f.SetCellValue(sheetName, "H4", tmpl.H4)
+			f.SetCellValue(sheetName, "H5", tmpl.H5)
+			f.SetCellValue(sheetName, "J3", tmpl.J3)
+			f.SetCellValue(sheetName, "J4", tmpl.J4)
+			f.SetCellValue(sheetName, "J5", tmpl.J5)
+			modified = true
+		} else {
+			missing = append(missing, sheetName)
+		}
+	}
+
+	if modified {
+		// Force full calculation on load to ensure E3/E4/E5 are updated
+		f.SetCalcProps(&excelize.CalcPropsOptions{FullCalcOnLoad: boolPtr(true)})
+
+		if err := f.Save(); err != nil {
+			return missing, sheetCount, fmt.Errorf("failed to save file: %w", err)
+		}
+	}
+
+	return missing, sheetCount, nil
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
