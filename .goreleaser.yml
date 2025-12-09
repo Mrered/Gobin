@@ -2,6 +2,19 @@ version: 2
 project_name: Gobin
 
 builds:
+  - id: hexinsuyangsummary
+    dir: ./cmd/hexinsuyangsummary
+    binary: hexinsuyangsummary
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
   - id: makemf
     dir: ./cmd/makemf
     binary: makemf
@@ -53,6 +66,14 @@ builds:
       - CGO_ENABLED=0
 
 archives:
+  - id: hexinsuyangsummary
+    builds: [hexinsuyangsummary]
+    format: tar.gz
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
   - id: makemf
     builds: [makemf]
     format: tar.gz
